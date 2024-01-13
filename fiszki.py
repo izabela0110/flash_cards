@@ -10,7 +10,7 @@ import random
 import sys
 from functools import partial
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt,QSize
 from PyQt5.QtWidgets import ( 
     QApplication,
     QGridLayout,
@@ -21,37 +21,49 @@ from PyQt5.QtWidgets import (
     QWidget,
     QLabel,
     )
+from PyQt5.QtGui import QImage, QPalette, QBrush, QFont
 
-WINDOW_SIZE_W = 400
+WINDOW_SIZE_W = 350
 WINDOW_SIZE_H = 200
-DISPLAY_HEIGHT = 35
+DISPLAY_HEIGHT = 48
 BUTTON_SIZE_W = 100
 BUTTON_SIZE_H = 30
 
-def read_file(file_location):
-    vocabulary = pd.read_excel(file_location)
-    return vocabulary
+class Vocabulary:
     
-def choose_word(vocabulary):
-    vs = vocabulary.shape
-    chosen_word_line = random.randint(1,vs[0]-1)
-    chosen_word = vocabulary.iloc[chosen_word_line,0]
-    print(chosen_word)
-    return chosen_word
+    def __init__(self, file_location):
+        self.file_location = file_location
+        self.read_file()
+        self.chosen_word = None
+        
+    def read_file(self):
+        self.vocabulary = pd.read_excel(self.file_location)
+        
+    
+    def choose_word(self):
+        vs = self.vocabulary.shape
+        chosen_word_line = random.randint(1,vs[0]-1)
+        self.chosen_word = self.vocabulary.iloc[chosen_word_line,0]
+        
 
-def show_answer(vocabulary, chosen_word):
-    polish_words_list = vocabulary.iloc[:,0].to_list()
-    chosen_word_index = polish_words_list.index(str(chosen_word))
-    answer = vocabulary.iloc[chosen_word_index,1]
-    print(answer)
-    return answer
+    def show_answer(self):
+        polish_words_list = self.vocabulary.iloc[:,0].to_list()
+        chosen_word_index = polish_words_list.index(self.chosen_word)
+        self.answer = self.vocabulary.iloc[chosen_word_index,1]
+
 
 class PyFiszkiWindow(QMainWindow):
     
     def __init__(self):
         super().__init__()
-        self.setWindowTitle('FiszkiApp')
+        self.setWindowTitle('Greek Flash Cards')
         self.setFixedSize(WINDOW_SIZE_W,WINDOW_SIZE_H)
+        oImage = QImage("C:\Iza\Rodos 2023\IMG_20230902_191550.jpg")
+        sImage = oImage.scaled(QSize(WINDOW_SIZE_W,WINDOW_SIZE_H)) 
+        palette = QPalette()
+        palette.setBrush(QPalette.Window, QBrush(sImage))                        
+        self.setPalette(palette) 
+        # self.setStyleSheet("background-color: #40E0D0;")
         self.generalLayout = QVBoxLayout()
         centralWidget = QWidget(self)
         centralWidget.setLayout(self.generalLayout)
@@ -60,9 +72,11 @@ class PyFiszkiWindow(QMainWindow):
         self._createButtons()
         
     def _createDisplay(self):
-        self.display = QLabel()
+        self.display = QLabel('Welcome to Greek Flash Cards App:) Click \'Next Word\' to start')
         self.display.setFixedHeight(DISPLAY_HEIGHT)
-        self.display.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.display.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.display.setFont(QFont('Arial', 12))
+        self.display.setWordWrap(True)
         # self.display.setReadOnly(True)
         self.generalLayout.addWidget(self.display)
         
@@ -82,6 +96,7 @@ class PyFiszkiWindow(QMainWindow):
                           'Next Word':QPushButton('Next Word')}
         for key,value in self.buttonMap.items():
             self.buttonMap[key].setFixedSize(BUTTON_SIZE_W,BUTTON_SIZE_H)
+            self.buttonMap[key].setStyleSheet("background-color: #00CED1;")
         buttonsLayout.addWidget(self.buttonMap['Answer'],0,0)
         buttonsLayout.addWidget(self.buttonMap['Next Word'],0,1)
         self.generalLayout.addLayout(buttonsLayout)
@@ -89,28 +104,29 @@ class PyFiszkiWindow(QMainWindow):
 
 class PyFiszki:
     
-    def __init__(self,model1,model2,view,vocabulary):
-        self._evaluate1 = model1
-        self._evaluate2 = model2
+    def __init__(self,model,view):
+        self._evaluate = model
         self._view = view
-        self._connectSignalsAndSlots(vocabulary)
-
+        self._connectSignalsAndSlots()
         
-    def _connectSignalsAndSlots(self,vocabulary):
-        self._view.buttonMap['Next Word'].clicked.connect(partial(choose_word,vocabulary))
-        self._view.buttonMap['Answer'].clicked.connect(show_answer)
+    def _updateLabelsChosenWord(self):
+        self._view.setDisplayText(self._evaluate.chosen_word)
         
+    def _updateLabelsAnswer(self):
+        self._view.setDisplayText(self._evaluate.answer)
+                
+    def _connectSignalsAndSlots(self):
+        self._view.buttonMap['Next Word'].clicked.connect(self._evaluate.choose_word)
+        self._view.buttonMap['Next Word'].clicked.connect(self._updateLabelsChosenWord)
+        self._view.buttonMap['Answer'].clicked.connect(self._evaluate.show_answer)
+        self._view.buttonMap['Answer'].clicked.connect(self._updateLabelsAnswer)
         
-        
-    
-    
     
 if __name__ == "__main__":
-    vocabulary = read_file(r'C:\Users\izabe\Desktop\fiszki_greckie.xlsx')
-    # chosen_word = choose_word(vocabulary)
-    # show_answer(vocabulary, chosen_word)
+    vocab = Vocabulary(r'C:\Users\izabe\Desktop\fiszki_greckie.xlsx')
     fiszkiApp = QApplication([])
     fiszkiWindow = PyFiszkiWindow()
     fiszkiWindow.show()
-    PyFiszki(choose_word,show_answer,fiszkiWindow,vocabulary)
+    pyfiszki = PyFiszki(vocab,fiszkiWindow)
     sys.exit(fiszkiApp.exec())
+    
