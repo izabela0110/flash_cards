@@ -37,7 +37,7 @@ class Vocabulary:
         self.chosen_word = None
         
     def read_file(self):
-        self.vocabulary = pd.read_excel(self.file_location)
+        self.vocabulary = pd.read_csv(self.file_location, sep=',', encoding = 'utf-8-sig')
         
     
     def choose_word(self):
@@ -58,7 +58,7 @@ class PyFiszkiWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle('Greek Flash Cards')
         self.setFixedSize(WINDOW_SIZE_W,WINDOW_SIZE_H)
-        oImage = QImage("C:\Iza\Rodos 2023\IMG_20230902_191550.jpg")
+        oImage = QImage("IMG_20230902_191550.jpg")
         sImage = oImage.scaled(QSize(WINDOW_SIZE_W,WINDOW_SIZE_H)) 
         palette = QPalette()
         palette.setBrush(QPalette.Window, QBrush(sImage))                        
@@ -123,7 +123,7 @@ class PyFiszki:
         
     
 if __name__ == "__main__":
-    vocab = Vocabulary(r'fiszki_greckie.xlsx')
+    vocab = Vocabulary(r'fiszki_greckie.csv')
     fiszkiApp = QApplication([])
     fiszkiWindow = PyFiszkiWindow()
     fiszkiWindow.show()
