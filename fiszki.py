@@ -123,7 +123,7 @@ class PyFiszki:
         
     
 if __name__ == "__main__":
-    vocab = Vocabulary(r'C:\Users\izabe\Desktop\fiszki_greckie.xlsx')
+    vocab = Vocabulary(r'fiszki_greckie.xlsx')
     fiszkiApp = QApplication([])
     fiszkiWindow = PyFiszkiWindow()
     fiszkiWindow.show()
